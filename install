@@ -1,11 +1,31 @@
 #!/bin/bash
+
+#Prerequisites
+
+#Python libraries
 /system/install python-dev python-numpy cython python-smbus portaudio19-dev
-/system/gitcloner superqudratic rtmidi-python /opt/rtmidi-python
+
+#RT-MIDI / PyAudio
+/system/gitcloner superqudratic/rtmidi-python /opt/rtmidi-python
 git clone http://people.csail.mit.edu/hubert/git/pyaudio.git /opt/pyaudio
 cd /opt/rtmidi-python;python setup.py install
 cd /opt/pyaudio;python setup.py install
-git clone https://github.com/josephernest/SamplerBox.git /do/samplerbox/python
+
+#Install RGB plate version
+git clone https://github.com/maditnerd/SamplerBox.git /do/samplerbox/python
 cd /do/samplerbox/python; sudo python setup.py build_ext --inplace
 
+#Copy default samples
 /do/samplerbox/copyDefaultSamples
 
+#Install systemd service
+cp /do/samplerbox/conf/samplerbox.service /etc/systemd/system/
+systemctl enable samplerbox
+
+#Install samba module
+/pi/install samba
+/do/samba/copy /do/samplerbox/conf/smb.conf
+
+#Install lcd module
+/pi/install adafruitLCD
+/do/adafruitLCD/manual
