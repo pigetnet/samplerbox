@@ -1,2 +1,2 @@
 /system/makedir /user/samples
-cp -R  /do/samplerbox/python/0\ Saw/ /user/samples/0\ Saw/
+cp -R /do/samplerbox/python/0\ Saw/ /user/samples/0\ Saw/

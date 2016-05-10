@@ -1,31 +1,81 @@
 #!/bin/bash
 
-#Prerequisites
+fatalError=0
 
-#Python libraries
-/system/install python-dev python-numpy cython python-smbus portaudio19-dev
+/show/description "[SAMPLERBOX] lcd Mod"
 
-#RT-MIDI / PyAudio
-/system/gitcloner superqudratic/rtmidi-python /opt/rtmidi-python
-git clone http://people.csail.mit.edu/hubert/git/pyaudio.git /opt/pyaudio
-cd /opt/rtmidi-python;python setup.py install
-cd /opt/pyaudio;python setup.py install
+# Python libraries
+/show/listecho "  Python Library" $INFO
+/system/install python-dev
+/system/install python-numpy
+/system/install cython
+/system/install python-smbus
+/system/install portaudio19-dev
 
-#Install RGB plate version
-git clone https://github.com/maditnerd/SamplerBox.git /do/samplerbox/python
-cd /do/samplerbox/python; sudo python setup.py build_ext --inplace
+/show/listecho "   Midi Library" $INFO
 
-#Copy default samples
-/do/samplerbox/copyDefaultSamples
+# RT-MIDI
+if [ -d /opt/rtmidi-python ];then
+	rm -rf /opt/rtmidi-python
+fi
 
-#Install systemd service
-cp /do/samplerbox/conf/samplerbox.service /etc/systemd/system/
-systemctl enable samplerbox
+/system/gitcloner superquadratic/rtmidi-python /opt/rtmidi-python
 
-#Install samba module
-/pi/install samba
-/do/samba/copy /do/samplerbox/conf/smb.conf
+cd /opt/rtmidi-python;python -W ignore setup.py -q install
+error_rtmidi=$?
 
-#Install lcd module
-/pi/install adafruitLCD
-/do/adafruitLCD/manual
+if [ $error_rtmidi -ne 0 ];then
+	/show/errorBox "RTMIDI was not installed"
+	fatalError=$error_rtmidi
+fi
+
+if [ $fatalError -eq 0 ];then
+	# Py Audio
+	if [ -d /opt/pyaudio ];then
+        	rm -rf /opt/rtmidi-python
+	fi
+
+	git clone -q http://people.csail.mit.edu/hubert/git/pyaudio.git /opt/pyaudio
+	cd /opt/pyaudio;python setup.py -q install
+
+	error_pyaudio=$?
+	if [ $error_pyaudio -ne 0 ];then
+		/show/errorBox "PYAUDIO was not installed"
+		fatalError=$error_pyaudio
+	fi
+fi
+
+if [ $fatalError -eq 0 ];then
+	/show/listecho "Samplerbox" $OK
+	#Install RGB plate version
+	git clone https://github.com/maditnerd/SamplerBox.git /do/samplerbox/python
+	cd /do/samplerbox/python; sudo python setup.py -q build_ext --inplace
+	error_samplerbox=$?
+	if [ $error_samplerbox -ne 0];then
+		/show/errorBox "Samplerbox was not installed"
+		fatalError=$error_samplerbox
+	fi
+fi
+
+if [ $fatalError -eq 0 ];then
+
+	#Copy default samples
+	/show/listecho "Copy samples" $OK
+	/do/samplerbox/copyDefaultSamples
+fi
+
+if [ $fatalError -eq 0 ];then
+
+	#Install systemd service
+	/show/listecho "Create service" $OK
+	cp /do/samplerbox/conf/samplerbox.service /etc/systemd/system/
+	systemctl enable samplerbox
+fi
+
+if [ $fatalError -eq 0 ];then
+	#Install samba module
+	/show/listecho "Create samba shares"
+	/pi/install samba
+	/do/samba/copy /do/samplerbox/conf/smb.conf
+
+fi

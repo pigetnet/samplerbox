@@ -1,0 +1,5 @@
+#!/bin/bash
+#Install samba module
+/pi/install samba
+/do/samba/copy /do/samplerbox/conf/smb.conf
+

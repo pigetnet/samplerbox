@@ -1,0 +1,4 @@
+#!/bin/bash
+#Install lcd module
+/pi/install adafruitLCD
+/do/adafruitLCD/manual
